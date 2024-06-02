@@ -1,0 +1,56 @@
+# https://github.com/canonical/ubuntu-image/blob/main/internal/imagedefinition/README.rst
+name: ubuntu
+display-name: Ubuntu
+architecture: amd64
+series: noble
+class: preinstalled
+kernel: linux-image-generic
+gadget:
+  url: https://github.com/snapcore/pc-gadget
+  type: git
+  branch: classic
+rootfs:
+  components:
+    - main
+    - restricted
+    - universe
+    - multiverse
+  flavor: xubuntu
+  pocket: updates
+  seed:
+    # See https://manpages.ubuntu.com/manpages/noble/en/man1/germinate.1.html
+    # and https://github.com/canonical/ubuntu-image/blob/2202fe98b290e9d1c046c61223f35b3528f84d44/internal/statemachine/helper.go#L639
+    urls:
+      - https://ubuntu-archive-team.ubuntu.com/seeds/
+    names:
+      - desktop
+    vcs: false
+    branch: noble
+  sources-list-deb822: true
+customization:
+  extra-packages:
+    - name: openssh-server
+  extra-snaps:
+    - name: snapd
+    # https://www.mail-archive.com/ubuntu-bugs@lists.ubuntu.com/msg6051166.html
+    # - name: chromium
+    # - name: cups
+  manual:
+    copy-file:
+      # HACK: needs to be called "chroot" and have "/.." as destination because
+      # `ubuntu-image` is using `cp -av "$source" "$destination"`
+      # (both cleaned via `filepath.Join(targetDir, ...)` in `manualCopyFile()`
+      # in <https://github.com/canonical/ubuntu-image/blob/@/internal/statemachine/helper.go>),
+      # which (with an existing destination directory) will result
+      # in copying to "$destination/chroot/".
+      - source: chroot
+        destination: /..
+      - source: customize
+        destination: /customize
+    execute:
+      - path: /customize
+artifacts:
+  qcow2:
+    - name: ubuntu-24.04.qcow2
+  manifest:
+    name: ubuntu-24.04.manifest

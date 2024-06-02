@@ -1,0 +1,15 @@
+#!/bin/sh -xeu
+
+# [`unbuntu-image`](https://snapcraft.io/ubuntu-image) can create
+# Ubuntu images but comes with the problem that they use random words
+# like "gadget snap" or "model assertion" nobody understands
+# and hide information about it all over the Internet.
+
+# https://ubuntu.com/core/docs/use-ubuntu-image
+sudo snap install ubuntu-image --classic
+
+# https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/ubuntu-image.html#basic-syntax
+sudo ubuntu-image --debug classic image_definition.yaml "$@"
+
+# HACK: ubuntu-image will have incorrectly changed the group of /dev/kvm to 993
+sudo chown :kvm /dev/kvm

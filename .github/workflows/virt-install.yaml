@@ -1,0 +1,26 @@
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@HEAD
+    - run: sudo chmod 1777 /mnt
+    - run: |
+        sudo apt-get update && sudo apt-get install -y virt-manager guestfs-tools
+        cd virt-install
+        curl -L -o /mnt/disk.iso "$source"
+        ./create-image /mnt/disk.iso "$disk"
+      env:
+         disk: /mnt/ubuntu.qcow2
+         source: https://cdimages.ubuntu.com/xubuntu/releases/24.04/release/xubuntu-24.04-desktop-amd64.iso
+    - uses: oras-project/setup-oras@HEAD
+    - run: |
+        cd /mnt
+        oras push -u "$GITHUB_ACTOR" -p "$GH_TOKEN" \
+          "ghcr.io/$GITHUB_REPOSITORY:$GITHUB_REF_NAME-virt-install" *.qcow2
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      packages: write

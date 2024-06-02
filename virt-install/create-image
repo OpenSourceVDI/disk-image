@@ -1,0 +1,44 @@
+#!/bin/sh -xeu
+
+source="$1"
+image="$2"
+os="${3:-ubuntu-lts-latest}"
+
+image_tmp="$image.tmp.qcow2"
+
+# HACK: Patch virt-install to also process `--cloud-init` when used together with `--location`.
+# See: https://github.com/virt-manager/virt-manager/pull/485
+if grep -qF 'elif self._cloudinit_data:' /usr/share/virt-manager/virtinst/install/installer.py; then
+  sudo sed -Eibak 's/el(if self._cloudinit_data:)/\1/' /usr/share/virt-manager/virtinst/install/installer.py
+fi
+
+qemu-img create -f qcow2 -- "$image_tmp" 100G
+virt-install --transient --destroy-on-exit \
+  --osinfo "detect=on,name=$os" \
+  `# --unattended does not yet support Ubuntu's new installer (https://github.com/canonical/subiquity)` \
+  `# See https://gitlab.com/libosinfo/osinfo-db/-/merge_requests/579` \
+  `#--cdrom "$source"` \
+  `#--unattended user-password-file=password,user-login=user` \
+  --location "$source,kernel=casper/vmlinuz,initrd=casper/initrd" \
+  --extra-args autoinstall \
+  --cloud-init user-data=user-data \
+  --disk "$image_tmp,format=qcow2" \
+  --noreboot \
+  --autoconsole none \
+  --wait \
+  `#`
+
+# HACK: guestfs (providing `virt-sparsify`) is broken on Ubuntu as Ubuntu does
+# not allow others read access to /boot/vmlinuz.
+# See: https://bugs.launchpad.net/ubuntu/+source/linux/+bug/759725/comments/35
+test -r /boot/vmlinuz || sudo chmod a+r /boot/vmlinuz
+virt-sparsify --in-place -- "$image_tmp"
+
+qemu-img convert -c -f qcow2 -O qcow2 -- "$image_tmp" "$image"
+
+ls -la -- "$image_tmp" "$image"
+rm -- "$image_tmp"
+
+: Run:
+: virt-install --import --noautoconsole --osinfo ubuntu-lts-latest --name test --disk *.qcow2
+: --noreboot

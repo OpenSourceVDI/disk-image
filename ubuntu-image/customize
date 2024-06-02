@@ -1,0 +1,10 @@
+#!/bin/sh -xeu
+
+useradd -mp "" user
+echo "user:user" | chpasswd
+usermod -aG sudo user
+
+# HACK: bad idea
+ssh-keygen -A
+
+apt-get remove -y apport python3-apport apport-symptoms

@@ -1,0 +1,21 @@
+on:
+  push:
+  workflow_dispatch:
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@HEAD
+    - run: sudo chmod 1777 /mnt
+    - run: |
+        cd ubuntu-image
+        ./create-image -O /mnt
+    - uses: oras-project/setup-oras@HEAD
+    - run: |
+        cd /mnt
+        oras push -u "$GITHUB_ACTOR" -p "$GH_TOKEN" \
+          "ghcr.io/$GITHUB_REPOSITORY:$GITHUB_REF_NAME-ubuntu-image" *.qcow2
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    permissions:
+      packages: write

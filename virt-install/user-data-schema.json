@@ -1,0 +1,10 @@
+{
+    "$comment": "https://canonical-subiquity.readthedocs-hosted.com/en/latest/reference/autoinstall-reference.html",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "type": "object",
+    "properties": {
+        "autoinstall": {
+            "$ref": "https://raw.githubusercontent.com/canonical/subiquity/main/autoinstall-schema.json"
+        }
+    }
+}

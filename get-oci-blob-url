@@ -1,0 +1,48 @@
+#!/bin/sh -eu
+
+# SPDX-License-Identifier: 0BSD
+
+# https://github.com/opencontainers/distribution-spec/blob/main/spec.md
+# https://github.com/opencontainers/image-spec/blob/main/spec.md
+# https://oras.land/
+
+ref="$1" # e.g., registry-1.docker.io/library/hello-world:latest@sha256:e2fc4e5012d16e7fe466f5291c476431beaa1f9b90a5c2125b493ed28e2aba57 (cannot reference an image index/manifest list/"multi-platform image" directly)
+blob="${2-}"
+
+: "${debug=}"
+
+: "${types=application/vnd.oci.image.manifest.v1+json}"
+# types="$types, application/vnd.oci.image.index.v1+json"
+# types="$types, application/vnd.docker.distribution.manifest.v2+json"
+# types="$types, application/vnd.docker.distribution.manifest.list.v2+json"
+
+host="${ref%%/*}"
+repo="${ref#*/}"
+repo="${repo%%@*}"
+repo="${repo%%:*}"
+tagOrDigest="${ref#*@}"
+if [ "$tagOrDigest" = "$ref" ]; then
+  tagOrDigest="${ref#*:}"
+fi
+if [ "$tagOrDigest" = "$ref" ]; then
+  tagOrDigest="latest"
+fi
+
+url="https://$host/v2/$repo/manifests/$tagOrDigest"
+authUrl="$(curl -s -I -- "$url" | sed -En -e 's/\r//g' -e 's/"//g' -e 's/,/?/' -e 's/,/\&/g' -e 's/^www-authenticate: bearer realm=//ip')"
+token="$(curl -fsS -- "$authUrl" | sed -En 's/^.*"token"\s*:\s*"([^"]*)".*$/\1/p')"
+
+if ! [ "$blob" ]; then
+  manifest="$(curl -fsS --oauth2-bearer "$token" -H "accept: $types" -- "$url")"
+  if [ "$debug" ]; then
+    printf '%s\n' "$manifest" >&2
+  fi
+  blob="$(printf %s "$manifest" | grep -Eo '"digest"\s*:\s*"[^"]*"' | sed -En 's/^"[^"]*"\s*:\s*"([^"]*)"$/\1/p' | tail -n1)"
+fi
+
+if ! [ "$blob" ]; then
+  echo Error: no blob found >&2
+  exit 1
+fi
+
+curl -fsS -D- -o /dev/null --oauth2-bearer "$token" -- "https://$host/v2/$repo/blobs/$blob" | sed -En -e 's/\r//g' -e 's/^location:\s*//ip'
