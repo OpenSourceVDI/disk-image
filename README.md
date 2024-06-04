@@ -17,6 +17,30 @@ While most Linux distributions provide pre-built cloud disk images (e.g., [Debia
 [^packer]: Later Packer versions [are licensed](https://www.hashicorp.com/license-faq#products-covered-by-bsl) as proprietary ["source-available software"](https://en.wikipedia.org/wiki/Source-available_software), which is worse than providing no source code at all because the source code's availability is used to threaten open-source projects with [claims of copyright infringement](https://opentofu.org/blog/our-response-to-hashicorps-cease-and-desist/).
 Using Packer's non-cost version to ["compete"](https://www.hashicorp.com/license-faq#usage-limitations) with paid versions is forbidden by the proprietary license. Using Packer in GitLab CI/CD or GitHub Actions to generate publicly available disk images could potentially be characterized as competing with Packer's paid cloud version.
 
+### How to download the images generated in this repository
+
+Use [oras](https://oras.land/docs/installation):
+```
+curl -L "https://github.com/$(curl -L https://github.com/oras-project/oras/releases/ | grep -Eom1 '/[^"]*/oras_[^"]+_linux_amd64.tar.gz')" | tar xz -C ~/.local/bin oras
+
+oras pull ghcr.io/opensourcevdi/disk-images:main-virt-install
+oras pull ghcr.io/opensourcevdi/disk-images:main-ubuntu-image 
+```
+
+or the [get-oci-blob-url](get-oci-blob-url) from this repository to get a (time-limited) download URL:
+
+```
+./get-oci-blob-url ghcr.io/opensourcevdi/disk-images:main-virt-install
+./get-oci-blob-url ghcr.io/opensourcevdi/disk-images:main-ubuntu-image
+```
+
+which you can, e.g., use with a web browser or combine with `curl`:
+
+```
+curl -Lo image.qcow2 "$(./get-oci-blob-url ghcr.io/opensourcevdi/disk-images:main-virt-install)"
+curl -Lo image.qcow2 "$(./get-oci-blob-url ghcr.io/opensourcevdi/disk-images:main-ubuntu-image)"
+```
+
 ## Saving large files from GitLab CI/CD/GitHub Actions
 
 An ideal storage for providing large public artifacts, e.g., disk images, produced by GitLab CI/CD or GitHub Actions would 
