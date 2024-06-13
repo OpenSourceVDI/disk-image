@@ -9,6 +9,7 @@ While most Linux distributions provide pre-built cloud disk images (e.g., [Debia
 - Packer [1.9.5](https://releases.hashicorp.com/packer/1.9.5/)[^packer]
 - [mkosi](https://github.com/systemd/mkosi)
 - [virt-builder](https://github.com/libguestfs/guestfs-tools/tree/master/builder)
+- [Image Builder](https://github.com/osbuild)
 - [debos](https://github.com/go-debos/debos)
 - [oz-install](https://github.com/clalancette/oz/blob/master/oz-install)
 - [openstack-debian-image](https://salsa.debian.org/openstack-team/debian/openstack-debian-images)
